@@ -1,4 +1,5 @@
 import os
+import json
 from googleapiclient.discovery import build
 import streamlit as st
 import isodate
@@ -58,6 +59,18 @@ def format_duration(seconds):
     minutes = int((seconds % 3600) // 60)
     return f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
 
+def load_completed_videos(filename='completed_videos.json'):
+    """Load completed videos from a JSON file."""
+    if os.path.exists(filename):
+        with open(filename, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_completed_videos(completed_videos, filename='completed_videos.json'):
+    """Save completed videos to a JSON file."""
+    with open(filename, 'w') as f:
+        json.dump(completed_videos, f)
+
 # Replace with your playlist ID
 playlist_id = 'PLPTV0NXA_ZSj6tNyn_UadmUeU3Q3oR-hu'
 
@@ -74,9 +87,9 @@ for video in video_list:
 # Streamlit UI Layout
 st.set_page_config(layout="wide")  # Set page to wide layout
 
-# Initialize session state for completed videos
+# Load completed videos from file
 if 'completed_videos' not in st.session_state:
-    st.session_state.completed_videos = []
+    st.session_state.completed_videos = load_completed_videos()
 
 # Sidebar - Completion Summary at the Top
 st.sidebar.header("Completion Summary")
@@ -107,9 +120,11 @@ for i, video in enumerate(video_list):
     if st.sidebar.checkbox(f"{video['title']} - {format_duration(video['duration'])}", value=checkbox_value, key=f"video_{i}"):
         if video['title'] not in completed_videos:
             completed_videos.append(video['title'])
+            save_completed_videos(completed_videos)  # Save to file when checked
     else:
         if video['title'] in completed_videos:
             completed_videos.remove(video['title'])
+            save_completed_videos(completed_videos)  # Save to file when unchecked
 
 # Main content - Embed selected video
 st.header("Learning Progress Tracker")
